@@ -1,0 +1,33 @@
+# Dependências para Detector de Objetos com GPU
+# =============================================
+
+# Core dependencies
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# PyTorch com suporte CUDA (GPU)
+# Descomente a linha apropriada para sua versão do CUDA:
+
+# Para CUDA 11.8
+torch>=2.0.0+cu118
+torchvision>=0.15.0+cu118
+
+# Para CUDA 12.1 (mais recente)
+# torch>=2.0.0+cu121
+# torchvision>=0.15.0+cu121
+
+# Para CPU apenas (não recomendado para performance)
+# torch>=2.0.0+cpu
+# torchvision>=0.15.0+cpu
+
+# Dependências opcionais para melhor performance
+pillow>=9.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Captura de tela (para main2.py)
+mss>=9.0.0
+
+# Captura de tela simples (para main2_simple.py)
+pyautogui>=0.9.54 
