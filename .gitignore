@@ -7,7 +7,6 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-.idea/
 .Python
 build/
 develop-eggs/
@@ -193,3 +192,4 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+/.idea/
