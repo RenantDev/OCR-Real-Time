@@ -2,16 +2,14 @@
 # =============================================
 
 # Core dependencies
-ultralytics>=8.0.0
-opencv-python>=4.8.0
-numpy>=1.24.0
+ultralytics==8.1.28
+opencv-python==4.9.0.80
+numpy==1.24.3
 
-# PyTorch com suporte CUDA (GPU)
-# Descomente a linha apropriada para sua versão do CUDA:
-
-# Para CUDA 11.8
-torch>=2.0.0+cu118
-torchvision>=0.15.0+cu118
+# PyTorch com CUDA 11.8 (compatível com RTX 3060 Ti)
+torch==2.2.0+cu118
+torchvision==0.17.0+cu118
+torchaudio==2.2.0+cu118
 
 # Para CUDA 12.1 (mais recente)
 # torch>=2.0.0+cu121
@@ -22,12 +20,21 @@ torchvision>=0.15.0+cu118
 # torchvision>=0.15.0+cpu
 
 # Dependências opcionais para melhor performance
-pillow>=9.0.0
+pillow==10.2.0
 matplotlib>=3.5.0
 seaborn>=0.11.0
 
 # Captura de tela (para main2.py)
-mss>=9.0.0
+mss==9.0.1
 
 # Captura de tela simples (para main2_simple.py)
-pyautogui>=0.9.54 
+pyautogui==0.9.54
+
+# Adicionando novas dependências
+Pillow>=10.0.0
+
+# Argumentos de linha de comando
+argparse==1.4.0
+
+# Nota: Para instalar PyTorch com CUDA, use:
+# pip install torch==2.2.0+cu118 torchvision==0.17.0+cu118 torchaudio==2.2.0+cu118 --index-url https://download.pytorch.org/whl/cu118 

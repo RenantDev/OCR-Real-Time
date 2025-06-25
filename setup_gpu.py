@@ -1,181 +1,163 @@
 #!/usr/bin/env python3
 """
-Script de Setup para Detector de Objetos com GPU
-===============================================
+Script de Setup Automatizado para GPU (RTX 3060 Ti)
+==================================================
 
-Verifica e configura automaticamente o ambiente para usar GPU.
+Este script instala automaticamente todas as dependências necessárias
+com versões específicas e compatíveis para sua RTX 3060 Ti.
 """
 
 import subprocess
 import sys
 import os
+import platform
 
-def executar_comando(comando):
-    """Executa um comando e retorna o resultado."""
+def run_command(command, description):
+    """Executa um comando e mostra o progresso."""
+    print(f"🔄 {description}...")
     try:
-        resultado = subprocess.run(comando, shell=True, capture_output=True, text=True)
-        return resultado.returncode == 0, resultado.stdout, resultado.stderr
-    except Exception as e:
-        return False, "", str(e)
-
-def verificar_cuda():
-    """Verifica se CUDA está instalado no sistema."""
-    print("🔍 Verificando CUDA...")
-    
-    # Verifica nvidia-smi
-    sucesso, saida, erro = executar_comando("nvidia-smi")
-    if sucesso:
-        print("✅ NVIDIA GPU detectada:")
-        print(saida)
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        print(f"✅ {description} - Concluído!")
         return True
-    else:
-        print("❌ NVIDIA GPU não detectada ou drivers não instalados")
-        print("   Erro:", erro)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ {description} - Erro:")
+        print(f"   Comando: {command}")
+        print(f"   Erro: {e.stderr}")
         return False
 
-def verificar_pytorch_cuda():
-    """Verifica se PyTorch tem suporte CUDA."""
-    print("\n🔍 Verificando PyTorch CUDA...")
-    
+def check_python_version():
+    """Verifica se a versão do Python é compatível."""
+    version = sys.version_info
+    if version.major < 3 or (version.major == 3 and version.minor < 8):
+        print("❌ Python 3.8+ é necessário!")
+        print(f"   Versão atual: {version.major}.{version.minor}.{version.micro}")
+        return False
+    print(f"✅ Python {version.major}.{version.minor}.{version.micro} - Compatível!")
+    return True
+
+def check_cuda():
+    """Verifica se CUDA está disponível no sistema."""
     try:
-        import torch
-        if torch.cuda.is_available():
-            print(f"✅ PyTorch CUDA disponível")
-            print(f"   Versão PyTorch: {torch.__version__}")
-            print(f"   Versão CUDA: {torch.version.cuda}")
-            print(f"   GPUs disponíveis: {torch.cuda.device_count()}")
-            for i in range(torch.cuda.device_count()):
-                print(f"   GPU {i}: {torch.cuda.get_device_name(i)}")
+        result = subprocess.run("nvidia-smi", shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("✅ NVIDIA GPU detectada!")
+            # Extrai informações da GPU
+            output = result.stdout
+            if "RTX 3060 Ti" in output:
+                print("✅ RTX 3060 Ti detectada!")
+            else:
+                print("⚠️  GPU NVIDIA detectada (pode não ser RTX 3060 Ti)")
             return True
         else:
-            print("❌ PyTorch instalado mas sem suporte CUDA")
+            print("❌ NVIDIA GPU não detectada!")
             return False
-    except ImportError:
-        print("❌ PyTorch não instalado")
+    except FileNotFoundError:
+        print("❌ nvidia-smi não encontrado. Verifique se os drivers NVIDIA estão instalados.")
         return False
 
-def instalar_dependencias():
-    """Instala as dependências necessárias."""
-    print("\n📦 Instalando dependências...")
+def install_dependencies():
+    """Instala todas as dependências."""
+    print("\n🚀 Iniciando instalação das dependências...")
     
-    # Lista de dependências
-    dependencias = [
-        "ultralytics>=8.0.0",
-        "opencv-python>=4.8.0", 
-        "numpy>=1.24.0",
-        "pillow>=9.0.0",
-        "matplotlib>=3.5.0",
-        "seaborn>=0.11.0"
+    # Lista de comandos de instalação
+    commands = [
+        # Limpa cache do pip
+        ("pip cache purge", "Limpando cache do pip"),
+        
+        # Atualiza pip
+        ("python -m pip install --upgrade pip", "Atualizando pip"),
+        
+        # Desinstala PyTorch antigo (se existir)
+        ("pip uninstall torch torchvision torchaudio -y", "Removendo PyTorch antigo"),
+        
+        # Instala PyTorch com CUDA 11.8
+        ("pip install torch==2.2.0+cu118 torchvision==0.17.0+cu118 torchaudio==2.2.0+cu118 --index-url https://download.pytorch.org/whl/cu118", "Instalando PyTorch com CUDA 11.8"),
+        
+        # Instala outras dependências
+        ("pip install ultralytics==8.1.28", "Instalando Ultralytics YOLO"),
+        ("pip install opencv-python==4.9.0.80", "Instalando OpenCV"),
+        ("pip install numpy==1.24.3", "Instalando NumPy"),
+        ("pip install mss==9.0.1", "Instalando MSS (captura de tela)"),
+        ("pip install pyautogui==0.9.54", "Instalando PyAutoGUI"),
+        ("pip install Pillow==10.2.0", "Instalando Pillow"),
+        ("pip install argparse==1.4.0", "Instalando argparse"),
     ]
     
-    for dep in dependencias:
-        print(f"   Instalando {dep}...")
-        sucesso, saida, erro = executar_comando(f"pip install {dep}")
-        if sucesso:
-            print(f"   ✅ {dep} instalado")
-        else:
-            print(f"   ❌ Erro ao instalar {dep}: {erro}")
-
-def instalar_pytorch_cuda():
-    """Instala PyTorch com suporte CUDA."""
-    print("\n🚀 Instalando PyTorch com CUDA...")
-    
-    # Tenta detectar a versão do CUDA
-    sucesso, saida, erro = executar_comando("nvcc --version")
-    if sucesso:
-        # Extrai versão do CUDA
-        for linha in saida.split('\n'):
-            if 'release' in linha.lower():
-                versao = linha.split('release')[1].split(',')[0].strip()
-                print(f"   Versão CUDA detectada: {versao}")
-                
-                # Instala versão apropriada do PyTorch
-                if '11.8' in versao:
-                    comando = "pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118"
-                elif '12.1' in versao:
-                    comando = "pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121"
-                else:
-                    comando = "pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118"
-                
-                print(f"   Executando: {comando}")
-                sucesso, saida, erro = executar_comando(comando)
-                if sucesso:
-                    print("   ✅ PyTorch CUDA instalado com sucesso")
-                    return True
-                else:
-                    print(f"   ❌ Erro: {erro}")
-                    return False
-    else:
-        print("   ⚠️  Não foi possível detectar versão do CUDA")
-        print("   Tentando instalar versão padrão...")
-        
-        comando = "pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118"
-        sucesso, saida, erro = executar_comando(comando)
-        if sucesso:
-            print("   ✅ PyTorch CUDA instalado")
-            return True
-        else:
-            print(f"   ❌ Erro: {erro}")
+    # Executa cada comando
+    for command, description in commands:
+        if not run_command(command, description):
+            print(f"\n❌ Falha na instalação: {description}")
             return False
+    
+    print("\n✅ Todas as dependências foram instaladas com sucesso!")
+    return True
 
-def testar_detector():
-    """Testa se o detector funciona corretamente."""
-    print("\n🧪 Testando detector...")
+def test_installation():
+    """Testa se a instalação foi bem-sucedida."""
+    print("\n🧪 Testando instalação...")
+    
+    test_script = """
+import torch
+import cv2
+import numpy as np
+from ultralytics import YOLO
+import pyautogui
+import mss
+from PIL import Image
+
+print("=== TESTE DE INSTALAÇÃO ===")
+print(f"PyTorch: {torch.__version__}")
+print(f"CUDA disponível: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+    print(f"Memória GPU: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f}GB")
+else:
+    print("⚠️  CUDA não disponível!")
+
+print(f"OpenCV: {cv2.__version__}")
+print(f"NumPy: {np.__version__}")
+print(f"Ultralytics: {YOLO.__version__}")
+print("✅ Todas as bibliotecas importadas com sucesso!")
+"""
     
     try:
-        from ultralytics import YOLO
-        import torch
-        
-        # Testa carregamento do modelo
-        modelo = YOLO("yolov8n.pt")
-        
-        # Testa GPU
-        if torch.cuda.is_available():
-            modelo.to("cuda")
-            print("✅ Teste GPU: OK")
-        else:
-            print("⚠️  GPU não disponível - usando CPU")
-        
-        print("✅ Detector funcionando corretamente")
+        result = subprocess.run([sys.executable, "-c", test_script], 
+                              capture_output=True, text=True, check=True)
+        print(result.stdout)
         return True
-        
-    except Exception as e:
-        print(f"❌ Erro no teste: {e}")
+    except subprocess.CalledProcessError as e:
+        print("❌ Erro no teste:")
+        print(e.stderr)
         return False
 
 def main():
     """Função principal."""
-    print("🚀 Setup do Detector de Objetos com GPU")
+    print("🎯 Setup Automatizado para GPU (RTX 3060 Ti)")
     print("=" * 50)
     
-    # Verifica CUDA
-    cuda_disponivel = verificar_cuda()
-    
-    # Verifica PyTorch
-    pytorch_ok = verificar_pytorch_cuda()
-    
-    if not pytorch_ok:
-        print("\n📦 PyTorch CUDA não encontrado. Instalando...")
-        if instalar_pytorch_cuda():
-            pytorch_ok = True
-        else:
-            print("❌ Falha ao instalar PyTorch CUDA")
-            return 1
-    
-    # Instala outras dependências
-    instalar_dependencias()
-    
-    # Testa o detector
-    if testar_detector():
-        print("\n🎉 Setup concluído com sucesso!")
-        print("\n📋 Para usar o detector:")
-        print("   python main.py")
-        print("\n📋 Para forçar CPU (não recomendado):")
-        print("   python main.py --cpu")
-        return 0
-    else:
-        print("\n❌ Setup falhou")
+    # Verificações iniciais
+    if not check_python_version():
         return 1
+    
+    if not check_cuda():
+        print("\n⚠️  Continuando sem CUDA (modo CPU)...")
+    
+    # Instala dependências
+    if not install_dependencies():
+        return 1
+    
+    # Testa instalação
+    if not test_installation():
+        print("\n❌ Alguns testes falharam. Verifique as mensagens acima.")
+        return 1
+    
+    print("\n🎉 Setup concluído com sucesso!")
+    print("\n📋 Próximos passos:")
+    print("   1. Execute: python main2_simple.py")
+    print("   2. Execute: python segmentacao_pessoas.py")
+    print("   3. Use 'q' para sair dos scripts")
+    
+    return 0
 
 if __name__ == "__main__":
     exit(main()) 
